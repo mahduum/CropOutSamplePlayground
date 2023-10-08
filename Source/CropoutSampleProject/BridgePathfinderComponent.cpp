@@ -70,8 +70,14 @@ bool UBridgePathfinderComponent::GetNextPath(TArray<FVector>& NextPath, FVector&
 		CurrentPathIndex = 0;
 	}
 
+	if(AvailableDirections.IsValidIndex(CurrentPathIndex) == false)
+	{
+		UE_LOG(LogCore, Warning, TEXT("Available paths is not empty but index %d is invalid, this should not happen!"), CurrentPathIndex);
+		return false;
+	}
+
 	NextPath = *PossibleConstructionPaths.Find(AvailableDirections[CurrentPathIndex]);
-	PathDirection = AvailableDirections[CurrentPathIndex];
+	PathDirection = AvailableDirections[CurrentPathIndex];//TODO: Access violation... Probably during recursion something writes to it. Implement differently. It can be turned into iterator of available directions, something calls GetNextPath but in the mean time something else proceeds with path query and modifies the directions
 	return true;
 }
 
