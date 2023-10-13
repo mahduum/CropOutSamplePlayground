@@ -5,7 +5,25 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
+
 #include "BridgePathfinderComponent.generated.h"
+
+USTRUCT(BlueprintType)
+struct FPossiblePath
+{
+	GENERATED_BODY()
+	UPROPERTY(BlueprintReadWrite)
+	TArray<FVector> PossiblePath;
+};
+
+USTRUCT(BlueprintType)
+struct FPossiblePaths
+{
+	GENERATED_BODY()
+	UPROPERTY(BlueprintReadOnly)
+	TMap<FIntVector, FPossiblePath> PossibleConstructionPaths;
+};
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPathUpdated, const TArray<FVector>&, CurrentPath);
 
 UCLASS( Blueprintable, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -24,7 +42,7 @@ protected:
 public:	
 	// todo make custom path class to store a path similar to like FNavigationPath is made
 	UFUNCTION(BlueprintCallable, Category="Build Mode")
-	UPARAM(DisplayName = "Can Be Placed") bool FindAndSetAvailableConstructionPaths(const USceneComponent* SceneComponent, ETraceTypeQuery TraceTypeQuery, const TArray<AActor*>& ActorsToIgnore, const UObject* WorldContextObject, const int MaxOffsets, TArray<FVector>& OutFirstPath, FVector& PathDirection);
+	UPARAM(DisplayName = "Can Be Placed") bool FindAndSetAvailableConstructionPaths(const USceneComponent* SceneComponent, ETraceTypeQuery TraceTypeQuery, const TArray<AActor*>& ActorsToIgnore, const UObject* WorldContextObject, const int MaxOffsets, TArray<FVector>& OutFirstPath, FVector& PathDirection, FPossiblePaths& OutPossiblePaths);
 
 	UFUNCTION(BlueprintCallable)
 	bool GetNextPath(TArray<FVector>& NextPath, FVector& PathDirection);
@@ -54,7 +72,7 @@ private:
 	TMap<FVector, TArray<FVector>> PossibleConstructionPaths;
 	TArray<FVector> AvailableDirections;
 	TArray<FVector> CurrentPath;
-
+    //TODO: remove this property!
 	UPROPERTY(BlueprintGetter = GetCurrentPathIndex)
 	int CurrentPathIndex;
 

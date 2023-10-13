@@ -2,6 +2,9 @@
 
 
 #include "BridgePathfinderComponent.h"
+
+#include "Engine/Internal/Kismet/BlueprintTypeConversions.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
 // Sets default values for this component's properties
 
@@ -21,33 +24,42 @@ void UBridgePathfinderComponent::BeginPlay()
 	Super::BeginPlay();
 
 	UE_LOG(LogCore, Display, TEXT("Path blockers num on begin play: %d, for: %s"), PathBlockers.Num(), *this->GetName());
-
-	//OnPathUpdated.AddDynamic(this, &UBrigdePathfinderComponent::OnPathUpdatedTest);
-	// ...
-	
 }
 
 bool UBridgePathfinderComponent::FindAndSetAvailableConstructionPaths(const USceneComponent* SceneComponent,
 	ETraceTypeQuery TraceTypeQuery, const TArray<AActor*>& ActorsToIgnore, const UObject* WorldContextObject,
-	const int MaxOffsets, TArray<FVector>& OutFirstPath, FVector& PathDirection)
+	const int MaxOffsets, TArray<FVector>& OutFirstPath, FVector& PathDirection, FPossiblePaths& OutPossiblePaths)
 {
 	FindAndSetBridgePossiblePaths(SceneComponent, TraceTypeQuery, ActorsToIgnore, WorldContextObject, MaxOffsets);
 	CurrentPathIndex = 0;
 	OutFirstPath = TArray<FVector>();
+	bool bIsAnyPathValid = false;
+	
 	if (AvailableDirections.IsEmpty())
 	{
 		return false;
 	}
-	
+	for(auto PathsIt = PossibleConstructionPaths.CreateConstIterator(); PathsIt; ++PathsIt)
+	{
+		if(PathsIt.Value().Num() < 2)
+		{
+			continue;
+		}
+		bIsAnyPathValid = true;
+		FPossiblePath PossiblePath;
+		PossiblePath.PossiblePath = PathsIt.Value();
+		OutPossiblePaths.PossibleConstructionPaths.Add(UKismetMathLibrary::FTruncVector(PathsIt.Key()), PossiblePath);
+	}
+
+
 	if (const auto Path = PossibleConstructionPaths.Find(AvailableDirections[0]))
 	{
 		OutFirstPath = *Path;
-		PathDirection = AvailableDirections[0];
-		OnPathUpdated.Broadcast(OutFirstPath);
-		return OutFirstPath.Num() > 1;
+		PathDirection = AvailableDirections[0];//todo make int
+		OnPathUpdated.Broadcast(OutFirstPath);//todo is it needed this?
 	}
 	
-	return false;
+	return bIsAnyPathValid;
 }
 
 bool UBridgePathfinderComponent::GetNextPath(TArray<FVector>& NextPath, FVector& PathDirection)
